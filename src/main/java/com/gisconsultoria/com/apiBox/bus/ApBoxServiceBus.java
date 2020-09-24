@@ -66,8 +66,19 @@ public class ApBoxServiceBus {
                         calendar.setTime(sucursal.getFechaInicial());
                         for(long dias = 0; totalDias < dias; totalDias++){
                             calendar.add(Calendar.DAY_OF_MONTH, (int)dias);
-                            apBoxXsaService.ObtenerArchivos(sucursal.getId(),
-                                    sucursal.getFechaInicial());
+                            Sucursal readSucursal = sucursalService.findById(sucursal.getId());
+                            LocalDate fechaInicial2 = readSucursal.getFechaInicial()
+                                                       .toInstant()
+                                                       .atZone(zoneId)
+                                                       .toLocalDate();
+
+                            if(fechaInicial.compareTo(fechaInicial2) < 0){
+                                apBoxXsaService.ObtenerArchivos(readSucursal.getId(),
+                                        readSucursal.getFechaInicial());
+                            }else{
+                                apBoxXsaService.ObtenerArchivos(sucursal.getId(),
+                                        sucursal.getFechaInicial());
+                            }
                         }
                     }
                 }

@@ -29,7 +29,7 @@ import java.util.List;
  * @author Luis Enrique Morales Soriano
  */
 @Service
-public class LogicaFacade implements ILogicaFacade{
+public class LogicaFacade implements ILogicaFacade {
 
     protected static final Logger LOG = Logger.getLogger(ApBoxReadXmlFile.class.getName());
 
@@ -61,11 +61,11 @@ public class LogicaFacade implements ILogicaFacade{
         List<RelXmlFacturaEmitida> facturas = relXmlFacturaEmitidaService
                 .findFirstFacturaEmitidaByUuid(uuid);
 
-        if(facturas != null){
-            for(RelXmlFacturaEmitida factura : facturas){
-                if(factura != null){
+        if (facturas != null) {
+            for (RelXmlFacturaEmitida factura : facturas) {
+                if (factura != null) {
                     LOG.error("El folio ".concat(factura.getUuid().concat(" ya fue cargado al sistema")));
-                    if(archivo.delete()){
+                    if (archivo.delete()) {
                         LOG.info("Archivo repetido, se eliminó correctamente");
                         return false;
                     }
@@ -81,29 +81,29 @@ public class LogicaFacade implements ILogicaFacade{
 
         Sucursal sucursal = sucursalService.getSucursalByRfc(comprobante.getEmisor().getRfc());
 
-        if(sucursal == null){
+        if (sucursal == null) {
             throw new Exception("El RFC del emisor: ".concat(comprobante.getEmisor().getRfc())
-                                .concat(" no fue encontrado en la base de datos"));
+                    .concat(" no fue encontrado en la base de datos"));
         }
 
         Cliente cliente;
 
-        if(comprobante.getEmisor().getRfc().equals("XEXX010101000") ||
-            comprobante.getEmisor().getRfc().equals("XAXX010101000")){
+        if (comprobante.getEmisor().getRfc().equals("XEXX010101000") ||
+                comprobante.getEmisor().getRfc().equals("XAXX010101000")) {
             cliente = clienteService.getClienteByParamsRazonSocial(comprobante.getReceptor().getRfc(),
                     comprobante.getReceptor().getNombre(), sucursal.getId());
-        }else{
+        } else {
             cliente = clienteService.getClienteByParams(comprobante.getReceptor().getRfc()
                     , sucursal.getId());
         }
 
-        if(cliente == null){
+        if (cliente == null) {
             cliente = new Cliente(new Date(), 1, comprobante.getReceptor().getNombre(),
                     comprobante.getReceptor().getRfc(), PaisEnum.MEX.number, sucursal);
 
-            try{
+            try {
                 clienteService.save(cliente);
-            }catch(DataIntegrityViolationException diExc){
+            } catch (DataIntegrityViolationException diExc) {
                 LOG.error("Error al momento de guardar al cliente en la base de datos", diExc);
                 throw new Exception("Error al momento de guardar al cliente en la base de datos",
                         diExc.getCause());
@@ -122,21 +122,21 @@ public class LogicaFacade implements ILogicaFacade{
         try {
 
             Sucursal sucursal = sucursalService.getSucursalByRfc(comprobante.getEmisor().getRfc());
-            if(sucursal == null){
+            if (sucursal == null) {
                 throw new Exception("No se encontró el RFC del emisor: "
                         .concat(comprobante.getEmisor().getRfc()));
             }
 
             Cliente cliente;
 
-            if(comprobante.getReceptor().getRfc() == "XEXX010101000" ||
-                comprobante.getReceptor().getRfc() == "XAXX010101000"){
+            if (comprobante.getReceptor().getRfc() == "XEXX010101000" ||
+                    comprobante.getReceptor().getRfc() == "XAXX010101000") {
                 cliente = clienteService.getClienteByParamsRazonSocial(
                         comprobante.getReceptor().getRfc(),
                         comprobante.getReceptor().getNombre(),
                         sucursal.getId()
                 );
-                if(cliente == null){
+                if (cliente == null) {
                     LOG.error("No se encontró receptor con RFC ".
                             concat(comprobante.getEmisor().getRfc()).concat(" y Razón Social ").
                             concat(comprobante.getEmisor().getNombre()));
@@ -144,10 +144,10 @@ public class LogicaFacade implements ILogicaFacade{
                             concat(comprobante.getEmisor().getRfc()).concat(" y Razón Social ").
                             concat(comprobante.getEmisor().getNombre()));
                 }
-            }else{
+            } else {
                 cliente = clienteService.getClienteByParams(comprobante.getReceptor().getRfc(),
                         sucursal.getId());
-                if(cliente == null){
+                if (cliente == null) {
                     LOG.error("No se encontró receptor con RFC: "
                             .concat(comprobante.getEmisor().getRfc()));
                     throw new Exception("No se encontró receptor con RFC: "
@@ -155,29 +155,39 @@ public class LogicaFacade implements ILogicaFacade{
                 }
             }
 
+            FacturaEmitida facturaEmitida;
 
-            FacturaEmitida facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
-                    comprobante.getFecha(), comprobante.getFolio(),
-                    Integer.parseInt(comprobante.getFormaPago()), comprobante.getMetodoPago().tipo,
-                    0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),
-                    comprobante.getTipoCambio(), comprobante.getTipoComprobante().number,
-                    comprobante.getTotal(), comprobante.getVersion().toString(), new Date());
+            if (comprobante.getFormaPago() == null || comprobante.getMetodoPago() == null) {
+                facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
+                        comprobante.getFecha(), comprobante.getFolio(),
+                        0, 0,
+                        0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),
+                        comprobante.getTipoCambio(), comprobante.getTipoComprobante().number,
+                        comprobante.getTotal(), comprobante.getVersion().toString(), new Date());
+            } else {
+                facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
+                        comprobante.getFecha(), comprobante.getFolio(),
+                        Integer.parseInt(comprobante.getFormaPago()), comprobante.getMetodoPago().tipo,
+                        0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),
+                        comprobante.getTipoCambio(), comprobante.getTipoComprobante().number,
+                        comprobante.getTotal(), comprobante.getVersion().toString(), new Date());
+            }
 
             Double totalImpuestosTrasladados = 0.0;
             Double totalImpuestosRetenidos = 0.0;
 
-            if(comprobante.getImpuestos() != null){
-                for(ImpuestoDao impuestos : comprobante.getImpuestos()){
+            if (comprobante.getImpuestos() != null) {
+                for (ImpuestoDao impuestos : comprobante.getImpuestos()) {
                     totalImpuestosRetenidos = impuestos.getTotalImpuestosRetenidos();
                     totalImpuestosTrasladados = impuestos.getTotalImpuestosTrasladados();
                 }
-                if(totalImpuestosRetenidos != null){
+                if (totalImpuestosRetenidos != null) {
                     facturaEmitida.setTotalImpuestosRetenidos(totalImpuestosRetenidos);
-                }else{
+                } else {
                     facturaEmitida.setTotalImpuestosRetenidos(0.0);
                 }
                 facturaEmitida.setTotalImpuestosTrasladados(totalImpuestosTrasladados);
-            }else{
+            } else {
                 facturaEmitida.setTotalImpuestosRetenidos(totalImpuestosRetenidos);
                 facturaEmitida.setTotalImpuestosTrasladados(totalImpuestosTrasladados);
             }
@@ -191,10 +201,10 @@ public class LogicaFacade implements ILogicaFacade{
                     uuid, encode, facturaEmitida);
 
             relXmlFacturaEmitidaService.save(relXmlFacturaEmitida);
-            if(archivo.delete()){
+            if (archivo.delete()) {
                 LOG.info("Archivo eliminado de la carpeta: " + file.getName());
             }
-        }catch (Exception ex){
+        } catch (Exception ex) {
             LOG.error("Ocurrió un error al momento de guardar el documento", ex);
             throw new Exception("Occurió un error al momento de guardar el documento", ex);
         }

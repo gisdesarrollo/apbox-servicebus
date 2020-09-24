@@ -63,10 +63,13 @@ public class ApBoxReadXmlFile implements IApBoxReadXmlFile{
             throw new IOException("Ocurrió un error al momento de extraer los archivos: " +
                     ex.getMessage());
         } catch (ParserConfigurationException e) {
+            LOG.error("OCURRIÓ UN ERROR DE EJECUCIÓN: ", e);
             e.printStackTrace();
         } catch (SAXException e) {
+            LOG.error("OCURRIÓ UN ERROR DE EJECUCIÓN: ", e);
             e.printStackTrace();
         } catch (Exception e) {
+            LOG.error("OCURRIÓ UN ERROR DE EJECUCIÓN: ", e);
             e.printStackTrace();
         }
     }
