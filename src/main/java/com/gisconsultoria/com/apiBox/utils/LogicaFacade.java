@@ -2,14 +2,12 @@ package com.gisconsultoria.com.apiBox.utils;
 
 import com.gisconsultoria.com.apiBox.model.Cliente;
 import com.gisconsultoria.com.apiBox.model.FacturaEmitida;
-import com.gisconsultoria.com.apiBox.model.RelXmlFacturaEmitida;
 import com.gisconsultoria.com.apiBox.model.Sucursal;
 import com.gisconsultoria.com.apiBox.model.dao.ImpuestoDao;
 import com.gisconsultoria.com.apiBox.model.dto.ComprobanteXmlDto;
 import com.gisconsultoria.com.apiBox.model.enums.PaisEnum;
 import com.gisconsultoria.com.apiBox.service.IClienteService;
 import com.gisconsultoria.com.apiBox.service.IFacturaEmitidaService;
-import com.gisconsultoria.com.apiBox.service.IRelXmlFacturaEmitidaService;
 import com.gisconsultoria.com.apiBox.service.ISucursalService;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -33,8 +31,8 @@ public class LogicaFacade implements ILogicaFacade {
 
     protected static final Logger LOG = Logger.getLogger(ApBoxReadXmlFile.class.getName());
 
-    @Autowired
-    private IRelXmlFacturaEmitidaService relXmlFacturaEmitidaService;
+//    @Autowired
+//    private IRelXmlFacturaEmitidaService relXmlFacturaEmitidaService;
 
     @Autowired
     private IClienteService clienteService;
@@ -56,13 +54,12 @@ public class LogicaFacade implements ILogicaFacade {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-DD");
         Date fechaTimbrado = format.parse(fecha);
         calendar.setTime(fechaTimbrado);
-//        String[] splittedUuid = uuid.split("-");
 
-        List<RelXmlFacturaEmitida> facturas = relXmlFacturaEmitidaService
-                .findFirstFacturaEmitidaByUuid(uuid);
+        List<FacturaEmitida> facturas =
+                facturaEmitidaService.findFirstFacturaEmitidaByUuid(uuid);
 
         if (facturas != null) {
-            for (RelXmlFacturaEmitida factura : facturas) {
+            for (FacturaEmitida factura : facturas) {
                 if (factura != null) {
                     LOG.error("El folio ".concat(factura.getUuid().concat(" ya fue cargado al sistema")));
                     if (archivo.delete()) {
@@ -88,8 +85,8 @@ public class LogicaFacade implements ILogicaFacade {
 
         Cliente cliente;
 
-        if (comprobante.getEmisor().getRfc().equals("XEXX010101000") ||
-                comprobante.getEmisor().getRfc().equals("XAXX010101000")) {
+        if (comprobante.getReceptor().getRfc().equals("XEXX010101000") ||
+                comprobante.getReceptor().getRfc().equals("XAXX010101000")) {
             cliente = clienteService.getClienteByParamsRazonSocial(comprobante.getReceptor().getRfc(),
                     comprobante.getReceptor().getNombre(), sucursal.getId());
         } else {
@@ -157,20 +154,25 @@ public class LogicaFacade implements ILogicaFacade {
 
             FacturaEmitida facturaEmitida;
 
+            File archivo = new File(file.getAbsolutePath() + "/" + xml);
+            byte[] encode = Base64.encodeBase64(FileUtils.readFileToByteArray(archivo));
+
             if (comprobante.getFormaPago() == null || comprobante.getMetodoPago() == null) {
                 facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
                         comprobante.getFecha(), comprobante.getFolio(),
                         0, 0,
                         0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),
                         comprobante.getTipoCambio(), comprobante.getTipoComprobante().number,
-                        comprobante.getTotal(), comprobante.getVersion().toString(), new Date());
+                        comprobante.getTotal(), comprobante.getVersion().toString(),
+                        uuid, encode, new Date());
             } else {
                 facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
                         comprobante.getFecha(), comprobante.getFolio(),
                         Integer.parseInt(comprobante.getFormaPago()), comprobante.getMetodoPago().tipo,
                         0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),
                         comprobante.getTipoCambio(), comprobante.getTipoComprobante().number,
-                        comprobante.getTotal(), comprobante.getVersion().toString(), new Date());
+                        comprobante.getTotal(), comprobante.getVersion().toString(),
+                        uuid, encode, new Date());
             }
 
             Double totalImpuestosTrasladados = 0.0;
@@ -194,13 +196,6 @@ public class LogicaFacade implements ILogicaFacade {
 
             facturaEmitidaService.save(facturaEmitida);
 
-            File archivo = new File(file.getAbsolutePath() + "/" + xml);
-            byte[] encode = Base64.encodeBase64(FileUtils.readFileToByteArray(archivo));
-
-            RelXmlFacturaEmitida relXmlFacturaEmitida = new RelXmlFacturaEmitida(facturaEmitida.getId(),
-                    uuid, encode, facturaEmitida);
-
-            relXmlFacturaEmitidaService.save(relXmlFacturaEmitida);
             if (archivo.delete()) {
                 LOG.info("Archivo eliminado de la carpeta: " + file.getName());
             }

@@ -2,7 +2,6 @@ package com.gisconsultoria.com.apiBox.utils;
 
 import com.gisconsultoria.com.apiBox.model.dao.ComplementoDao;
 import com.gisconsultoria.com.apiBox.model.dto.ComprobanteXmlDto;
-import com.gisconsultoria.com.apiBox.service.IRelXmlFacturaEmitidaService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,8 +38,6 @@ public class ApBoxReadXmlFile implements IApBoxReadXmlFile{
 
     @Autowired
     private ILogicaFacade logicaFacade;
-
-    private IRelXmlFacturaEmitidaService relXmlFacturaEmitidaService;
 
     @Override
     public void readXmlFile(File dir) throws IOException {

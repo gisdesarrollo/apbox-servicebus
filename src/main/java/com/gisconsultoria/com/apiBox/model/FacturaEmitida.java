@@ -74,17 +74,20 @@ public class FacturaEmitida implements Serializable {
     @Column(name = "TotalImpuestosTrasladados")
     private Double totalImpuestosTrasladados;
 
-    @OneToMany(mappedBy = "facturaEmitida")
-    private Set<RelXmlFacturaEmitida> facturas;
+    @Column(name = "Uuid")
+    private String uuid;
 
-    public FacturaEmitida(){
-        facturas = new HashSet<>();
+    @Lob
+    @Column(name = "ArchivoFisicoXml")
+    private byte[] archivoFisicoXml;
+
+    public FacturaEmitida() {
     }
 
     public FacturaEmitida(Long idEmisor, Long idReceptor, Date fecha, String folio, int formaPago,
                           int metodoPago, Double descuento, int moneda, String serie, Double subTotal,
                           Double tipoCambio, int tipoComprobante, Double total, String version,
-                          Date fechaTimbrado) {
+                          String uuid, byte[] archivoFisicoXml, Date fechaTimbrado) {
         this.idEmisor = idEmisor;
         this.idReceptor = idReceptor;
         this.fecha = fecha;
@@ -99,6 +102,8 @@ public class FacturaEmitida implements Serializable {
         this.tipoComprobante = tipoComprobante;
         this.total = total;
         this.version = version;
+        this.uuid = uuid;
+        this.archivoFisicoXml = archivoFisicoXml;
         this.fechaTimbrado = fechaTimbrado;
     }
 
@@ -222,13 +227,13 @@ public class FacturaEmitida implements Serializable {
         this.fechaTimbrado = fechaTimbrado;
     }
 
-    public Set<RelXmlFacturaEmitida> getFacturas() {
-        return facturas;
-    }
-
-    public void setFacturas(Set<RelXmlFacturaEmitida> facturas) {
-        this.facturas = facturas;
-    }
+//    public Set<RelXmlFacturaEmitida> getFacturas() {
+//        return facturas;
+//    }
+//
+//    public void setFacturas(Set<RelXmlFacturaEmitida> facturas) {
+//        this.facturas = facturas;
+//    }
 
     public Double getDescuento() {
         return descuento;
@@ -252,5 +257,21 @@ public class FacturaEmitida implements Serializable {
 
     public void setTotalImpuestosTrasladados(Double totalImpuestosTrasladados) {
         this.totalImpuestosTrasladados = totalImpuestosTrasladados;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        uuid = uuid;
+    }
+
+    public byte[] getArchivoFisicoXml() {
+        return archivoFisicoXml;
+    }
+
+    public void setArchivoFisicoXml(byte[] archivoFisicoXml) {
+        this.archivoFisicoXml = archivoFisicoXml;
     }
 }
