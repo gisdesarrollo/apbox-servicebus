@@ -13,8 +13,8 @@ public interface IClienteDao extends CrudRepository<Cliente, Long> {
     @Query("select c from Cliente c where c.rfc = rfc")
     public Cliente getClienteByRfc(@Param("rfc")String rfc);
 
-    @Query("select c from Cliente c where c.rfc = rfc and c.razonSocial = razonSocial and " +
-            "c.sucursal.id = id")
+    @Query("select c from Cliente c where c.rfc = :rfc and c.razonSocial = :razonSocial and " +
+            "c.sucursal.id = :id")
     public Cliente getClienteByParamsRazonSocial(@Param("rfc")String rfc,
                                       @Param("razonSocial")String razonSocial,
                                       @Param("id") Long id);
