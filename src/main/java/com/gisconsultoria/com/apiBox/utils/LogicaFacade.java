@@ -126,8 +126,8 @@ public class LogicaFacade implements ILogicaFacade {
 
             Cliente cliente;
 
-            if (comprobante.getReceptor().getRfc() == "XEXX010101000" ||
-                    comprobante.getReceptor().getRfc() == "XAXX010101000") {
+            if (comprobante.getReceptor().getRfc().equals("XEXX010101000") ||
+                    comprobante.getReceptor().getRfc().equals("XAXX010101000")) {
                 cliente = clienteService.getClienteByParamsRazonSocial(
                         comprobante.getReceptor().getRfc(),
                         comprobante.getReceptor().getNombre(),
