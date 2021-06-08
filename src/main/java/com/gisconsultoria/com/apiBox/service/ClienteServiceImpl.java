@@ -5,6 +5,8 @@ import com.gisconsultoria.com.apiBox.model.Cliente;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author Luis Enrique Morales Soriano
  */
@@ -27,6 +29,16 @@ public class ClienteServiceImpl implements IClienteService{
     @Override
     public Cliente getClienteByParams(String rfc, Long id) {
         return clienteDao.getClienteByParams(rfc, id);
+    }
+
+    @Override
+    public List<Cliente> getListClienteByParams(String rfc, Long id) {
+        return clienteDao.getListClienteByParams(rfc, id);
+    }
+
+    @Override
+    public List<Cliente> getListClienteByParamsRazonSocial(String rfc, String razonSocial, Long id) {
+        return clienteDao.getListClienteByParamsRazonSocial(rfc, razonSocial, id);
     }
 
     @Override

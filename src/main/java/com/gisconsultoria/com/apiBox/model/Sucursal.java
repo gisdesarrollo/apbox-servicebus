@@ -113,4 +113,5 @@ public class Sucursal implements Serializable {
     public void setClientes(Set<Cliente> clientes) {
         this.clientes = clientes;
     }
+
 }

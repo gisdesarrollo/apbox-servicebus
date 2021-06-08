@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -83,18 +84,22 @@ public class LogicaFacade implements ILogicaFacade {
                     .concat(" no fue encontrado en la base de datos"));
         }
 
-        Cliente cliente;
+        List<Cliente> clientes;
 
         if (comprobante.getReceptor().getRfc().equals("XEXX010101000") ||
                 comprobante.getReceptor().getRfc().equals("XAXX010101000")) {
-            cliente = clienteService.getClienteByParamsRazonSocial(comprobante.getReceptor().getRfc(),
+            clientes = clienteService.getListClienteByParamsRazonSocial(comprobante.getReceptor().getRfc(),
                     comprobante.getReceptor().getNombre(), sucursal.getId());
         } else {
-            cliente = clienteService.getClienteByParams(comprobante.getReceptor().getRfc()
+            clientes = clienteService.getListClienteByParams(comprobante.getReceptor().getRfc()
                     , sucursal.getId());
         }
 
-        if (cliente == null) {
+        if (clientes.isEmpty()) {
+
+            new Cliente();
+            Cliente cliente;
+
             cliente = new Cliente(new Date(), 1, comprobante.getReceptor().getNombre(),
                     comprobante.getReceptor().getRfc(), PaisEnum.MEX.number, sucursal);
 
@@ -124,16 +129,16 @@ public class LogicaFacade implements ILogicaFacade {
                         .concat(comprobante.getEmisor().getRfc()));
             }
 
-            Cliente cliente;
+            List<Cliente> clientes;
 
             if (comprobante.getReceptor().getRfc().equals("XEXX010101000") ||
                     comprobante.getReceptor().getRfc().equals("XAXX010101000")) {
-                cliente = clienteService.getClienteByParamsRazonSocial(
+                clientes = clienteService.getListClienteByParamsRazonSocial(
                         comprobante.getReceptor().getRfc(),
                         comprobante.getReceptor().getNombre(),
                         sucursal.getId()
                 );
-                if (cliente == null) {
+                if (clientes.isEmpty()) {
                     LOG.error("No se encontró receptor con RFC ".
                             concat(comprobante.getEmisor().getRfc()).concat(" y Razón Social ").
                             concat(comprobante.getEmisor().getNombre()));
@@ -142,9 +147,9 @@ public class LogicaFacade implements ILogicaFacade {
                             concat(comprobante.getEmisor().getNombre()));
                 }
             } else {
-                cliente = clienteService.getClienteByParams(comprobante.getReceptor().getRfc(),
+                clientes = clienteService.getListClienteByParams(comprobante.getReceptor().getRfc(),
                         sucursal.getId());
-                if (cliente == null) {
+                if (clientes.isEmpty()) {
                     LOG.error("No se encontró receptor con RFC: "
                             .concat(comprobante.getEmisor().getRfc()));
                     throw new Exception("No se encontró receptor con RFC: "
@@ -158,7 +163,7 @@ public class LogicaFacade implements ILogicaFacade {
             byte[] encode = Base64.encodeBase64(FileUtils.readFileToByteArray(archivo));
 
             if (comprobante.getFormaPago() == null || comprobante.getMetodoPago() == null) {
-                facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
+                facturaEmitida = new FacturaEmitida(sucursal.getId(), clientes.get(0).getId(),
                         comprobante.getFecha(), comprobante.getFolio(),
                         0, 0,
                         0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),
@@ -166,7 +171,7 @@ public class LogicaFacade implements ILogicaFacade {
                         comprobante.getTotal(), comprobante.getVersion().toString(),
                         uuid, encode, new Date());
             } else {
-                facturaEmitida = new FacturaEmitida(sucursal.getId(), cliente.getId(),
+                facturaEmitida = new FacturaEmitida(sucursal.getId(), clientes.get(0).getId(),
                         comprobante.getFecha(), comprobante.getFolio(),
                         Integer.parseInt(comprobante.getFormaPago()), comprobante.getMetodoPago().tipo,
                         0.0, comprobante.getMoneda().number, comprobante.getSerie(), comprobante.getSubTotal(),

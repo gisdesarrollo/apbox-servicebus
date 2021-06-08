@@ -42,7 +42,7 @@ public class ApBoxReadXmlFile implements IApBoxReadXmlFile{
     @Override
     public void readXmlFile(File dir) throws IOException {
 
-        LOG.info("LEECTURA DEL ARCHIVO DENTRO DE LA CARPETA: ".concat(dir.getName()));
+        LOG.info("LECTURA DEL ARCHIVO DENTRO DE LA CARPETA: ".concat(dir.getName()));
 
         try(Stream<Path> stream = Files.walk(Paths.get(dir.getAbsolutePath()))){
             Set<String> archivosXml = stream
