@@ -90,7 +90,7 @@ public class ApBoxServiceBus {
                 LOG.info("TOTAL CFDI DESCARGADOS EN LA CARPETA : " + lista.length);
 
                 LOG.info("Obteniendo archivos extraidos de todas las sucursales");
-               // apBoxReadXmlFile.readXmlFile(path);
+                apBoxReadXmlFile.readXmlFile(path);
 
                 LOG.info("FINALIZA LA EJECUCIÓN CON FECHA: " + fechaActual);
                 
