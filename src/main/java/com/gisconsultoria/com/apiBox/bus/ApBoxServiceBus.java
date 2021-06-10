@@ -42,18 +42,19 @@ public class ApBoxServiceBus {
     @Autowired
     private IApBoxReadXmlFile apBoxReadXmlFile;
 
-    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Mexico_City")
+    @Scheduled(cron = "05 52 11 * * *", zone = "America/Mexico_City")
     public void executeServiceBus(){
 
         List<Sucursal> sucursales = sucursalService.getActiveSucursales();
         ZoneId zoneId = ZoneId.of("America/Mexico_City");
         Date fechaActual = Date.from(ZonedDateTime.now(zoneId).toInstant());
         Calendar calendar = Calendar.getInstance();
-
+       
         if(sucursales != null){
             try{
-                LOG.info("DESCARGANDO ARCHIVOS DEL SERVLET");
+                LOG.info("DESCARGANDO ARCHIVOS DE LA API");
                 for(Sucursal sucursal : sucursales){
+                	
                     if(fechaActual.after(sucursal.getFechaInicial())){
                         LocalDate fechaInicial = sucursal.getFechaInicial().toInstant()
                                                          .atZone(zoneId)
@@ -76,17 +77,24 @@ public class ApBoxServiceBus {
                                 apBoxXsaService.ObtenerArchivos(readSucursal.getId(),
                                         readSucursal.getFechaInicial());
                             }else{
-                                apBoxXsaService.ObtenerArchivos(sucursal.getId(),
+                            	apBoxXsaService.ObtenerArchivos(sucursal.getId(),
                                         sucursal.getFechaInicial());
+                            	
                             }
                         }
                     }
+                	
                 }
+  
+                File[] lista = path.listFiles();
+                LOG.info("TOTAL CFDI DESCARGADOS EN LA CARPETA : " + lista.length);
 
                 LOG.info("Obteniendo archivos extraidos de todas las sucursales");
-                apBoxReadXmlFile.readXmlFile(path);
+               // apBoxReadXmlFile.readXmlFile(path);
 
                 LOG.info("FINALIZA LA EJECUCIÓN CON FECHA: " + fechaActual);
+                
+                
             }catch(IOException exc){
                 LOG.error("Error al momento de la ejecución: " + exc.getMessage());
             }

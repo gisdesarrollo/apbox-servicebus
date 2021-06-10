@@ -2,15 +2,14 @@ package com.gisconsultoria.com.apiBox.services;
 
 import com.gisconsultoria.com.apiBox.model.Sucursal;
 import com.gisconsultoria.com.apiBox.service.ISucursalService;
-import org.apache.commons.codec.binary.Base64;
+import com.gisconsultoria.com.apiBox.utils.IDescargaCfdi;
+
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.net.URL;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -24,96 +23,112 @@ import java.util.zip.ZipFile;
 @Service
 public class ApBoxXsaService {
 
-    protected static final Logger LOG = Logger.getLogger(ApBoxXsaService.class.getName());
+	protected static final Logger LOG = Logger.getLogger(ApBoxXsaService.class.getName());
 
-    @Value("${path.archivo.archivosXml}")
-    private String pathArchivos;
+	@Value("${path.archivo.archivosXml}")
+	private String pathArchivos;
 
-    @Value("${api.xsa.url.descarga.cfdi}")
-    private String path;
+	@Autowired
+	private ISucursalService sucursalService;
 
-    @Autowired
-    private ISucursalService sucursalService;
+	@Autowired
+	private IDescargaCfdi descargaCfdi;
 
-    public void ObtenerArchivos(Long sucursalId, Date fecha) throws IOException {
+	public void ObtenerArchivos(Long sucursalId, Date fecha) throws IOException {
 
-        Sucursal sucursal = sucursalService.findById(sucursalId);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String dateString = dateFormat.format(fecha);
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(fecha);
-        calendar.add(Calendar.DAY_OF_MONTH, 1);
+		Sucursal sucursal = sucursalService.findById(sucursalId);
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		String fechaInicial = dateFormat.format(fecha);
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(fecha);
+		calendar.add(Calendar.DAY_OF_MONTH, 1);
+		String fechaFinal = dateFormat.format(calendar.getTime());
+		File zip = null;
+		int pageZise = 100;
+		int totalCfdiEmitidos=0;
+		
+		try {
+			// get TotalCfdiEmitidos
+			totalCfdiEmitidos = descargaCfdi.getTotalCfdiGenerados(sucursal.getServidor(), sucursal.getKeyXsa(),
+					fechaInicial, fechaFinal);
+			if(totalCfdiEmitidos==0) {
+				throw new Exception("No se encontraron cfdi emitidos de la sucursal: "+sucursal.getNombre()+" con fecha: "+fechaInicial);
+			}
+			// totalPageNumber
+			int totalPagesNumber = (int) (Math.floor(totalCfdiEmitidos / pageZise));
+			// get CFDI por pageNumber
+			LOG.info("Total de CFDI a descargar: " +totalCfdiEmitidos);
+			for (int x = 0; x <= totalPagesNumber; x++) {
+				InputStream zipStream = descargaCfdi.getCfdiZip(fechaInicial, fechaFinal, sucursal.getRfc(),pageZise,x);
+				
+				zip = File.createTempFile(sucursal.getRfc(),
+						"_P".concat(String.valueOf(x) + "_").concat(fechaInicial).concat(".zip"));
+				OutputStream out = new BufferedOutputStream(new FileOutputStream(zip));
+				copyInputStream(zipStream, out);
+				out.close();
 
-        String urlPath = "https://".concat(sucursal.getServidor()).concat(":9050/")
-                .concat(sucursal.getKeyXsa()).concat(path).concat("?")
-                .concat("fechaInicial=").concat(dateString).concat("&")
-                .concat("fechaFinal=").concat(dateFormat.format(calendar.getTime()));
+				File path = new File(pathArchivos);
+				LOG.info("Obteniendo archivos para la sucursal: " + sucursal.getNombre());
+				if (zip.length() > 0) {
+					unpackArchive(zip, path);
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.error("Error al momento de ejecucion");
+		}
+		sucursal.setFechaInicial(calendar.getTime());
+		sucursalService.save(sucursal);
+	}
 
-        URL url = new URL(urlPath);
+	private void unpackArchive(File zip, File path) throws IOException {
+		if (!zip.exists()) {
+			throw new IOException(zip.getAbsolutePath() + " no existe el archivo");
+		}
+		if (!path.exists()) {
+			throw new IOException("No se puede encontrar el directorio: " + path);
+		}
 
-        InputStream in = new BufferedInputStream(url.openStream(), 1024);
-        File zip = File.createTempFile(sucursal.getRfc(), dateString.concat(".zip"));
-        OutputStream out = new BufferedOutputStream(new FileOutputStream(zip));
-        copyInputStream(in, out);
-        out.close();
+		ZipFile zipFile = new ZipFile(zip);
+		for (Enumeration entries = zipFile.entries(); entries.hasMoreElements();) {
+			ZipEntry entry = (ZipEntry) entries.nextElement();
 
-        File path = new File(pathArchivos);
-        LOG.info("Obteniendo archivos para la sucursal: " + sucursal.getNombre());
-        if(zip.length() > 0){
-            unpackArchive(zip, path);
-        }
+			if (entry.getName().contains(".xml") || entry.getName().toUpperCase().contains(".xml")) {
+				LOG.info("Obteniendo el archivo: " + entry.getName());
+				File file = new File(path, File.separator + entry.getName());
+				if (!buildDirectory(file.getParentFile())) {
+					throw new IOException("No se puede crear el directorio: " + file.getParentFile());
+				}
+				if (!entry.isDirectory()) {
+					copyInputStream(zipFile.getInputStream(entry),
+							new BufferedOutputStream(new FileOutputStream(file)));
+				} else {
+					if (!buildDirectory(file)) {
+						throw new IOException("No se puede crear el directorio: " + file);
+					}
+				}
+			}
+		}
 
-        sucursal.setFechaInicial(calendar.getTime());
-        sucursalService.save(sucursal);
+		zipFile.close();
 
-    }
+	}
 
-    private void unpackArchive(File zip, File path) throws IOException {
-        if (!zip.exists()) {
-            throw new IOException(zip.getAbsolutePath() + " no existe el archivo");
-        }
-        if (!path.exists()) {
-            throw new IOException("No se puede encontrar el directorio: " + path);
-        }
+	private void copyInputStream(InputStream in, OutputStream out) throws IOException {
+		byte[] buffer = new byte[2048];
 
-        ZipFile zipFile = new ZipFile(zip);
-        for (Enumeration entries = zipFile.entries(); entries.hasMoreElements(); ) {
-            ZipEntry entry = (ZipEntry) entries.nextElement();
+		int len = in.read(buffer);
+		while (len >= 0) {
+			out.write(buffer, 0, len);
+			len = in.read(buffer);
+		}
 
-            if (entry.getName().contains(".xml") || entry.getName().toUpperCase().contains(".xml")) {
-                LOG.info("Obteniendo el archivo: " + entry.getName());
-                File file = new File(path, File.separator + entry.getName());
-                if (!buildDirectory(file.getParentFile())) {
-                    throw new IOException("No se puede crear el directorio: " + file.getParentFile());
-                }
-                if (!entry.isDirectory()) {
-                    copyInputStream(zipFile.getInputStream(entry), new BufferedOutputStream(new FileOutputStream(file)));
-                } else {
-                    if (!buildDirectory(file)) {
-                        throw new IOException("No se puede crear el directorio: " + file);
-                    }
-                }
-            }
-        }
+		in.close();
+		out.close();
+	}
 
-        zipFile.close();
-
-    }
-
-    private void copyInputStream(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[2048];
-
-        int len = in.read(buffer);
-        while (len >= 0) {
-            out.write(buffer, 0, len);
-            len = in.read(buffer);
-        }
-
-        in.close();
-        out.close();
-    }
-
-    private boolean buildDirectory(File file) {
-        return file.exists() || file.mkdir();
-    }
+	private boolean buildDirectory(File file) {
+		return file.exists() || file.mkdir();
+	}
 }
