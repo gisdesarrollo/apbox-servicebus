@@ -42,7 +42,7 @@ public class ApBoxServiceBus {
     @Autowired
     private IApBoxReadXmlFile apBoxReadXmlFile;
 
-    @Scheduled(cron = "05 52 11 * * *", zone = "America/Mexico_City")
+    @Scheduled(cron = "0 0 0 * * *", zone = "America/Mexico_City")
     public void executeServiceBus(){
 
         List<Sucursal> sucursales = sucursalService.getActiveSucursales();

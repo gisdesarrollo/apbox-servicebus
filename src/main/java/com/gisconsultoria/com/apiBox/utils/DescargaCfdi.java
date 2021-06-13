@@ -25,7 +25,7 @@ public class DescargaCfdi implements IDescargaCfdi{
     @Value("${api.xsa.url.descarga.cfdi}")
 	private String path;
 	
-	@Value("${xsa.api.url.consulta.generados.cfdi}")
+	@Value("${api.xsa.url.consulta.generados.cfdi}")
 	private String pathCfdiGenerados;
 	
 	@Override
